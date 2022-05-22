@@ -1,46 +1,37 @@
 # h2bNh
 
 This is Covering the Interl Hex format file to `Binary` or `C header` 
+Support `Extended Segment Address Record` and `Extended Linear Address Record`
 
-
-Usage: Simple command line interface for UPDI programming:
-   or: cupdi [options] [[--] args]
-   or: Erase chip: cupdi -c COM2 -d tiny817 -e
-   or: Flash hex file: cupdi -c COM2 -d tiny817 --program -f c:/817.hex
-
-Namespace(align='16', baseAddr='0x0', filename='', pad='0xFF', size='0x0', wcrc=False)
+Namespace(align='16', baseAddr='0x0', filename='', gapSimSeg='0', pad='0xFF', sigmentTargetSize='0x0', wcrc=False)
 usage: Prog:  [-h] [-v] [-f [File Name]] [-a [Segment Base Address]]
-              [-s [Generated Size]] [-p [Padded Value]] [--align [Text Align]]
-              [--wcrc]
+              [-s [The Generated Size of a Sigment]] [-p [Padded Value]]
+              [- [Gap to a New Segment]] [--align [Text Align]] [--wcrc]
 
-Covert Intel Hex format to `Binary` and `C Header`:
+Covert Intel Hex format to Binary and `c` Header:
 =================================================
 Examples:
-
     <1> For pure hex(without segment): python h2bNh.py -f file.hex -a 0x8000 -s 0x3800 -p 0xFF
     <2> For segment included hex: python h2bNh.py -f file.hex
 
 optional arguments:
-
-  -h, --help            show this help message and exit  
-  -v, --version         show version  
+  -h, --help            show this help message and exit
+  -v, --version         show version
   -f [File Name], --filename [File Name]
-			where the 'hex' file will be load
-						
+                        where the 'hex' file will be load
   -a [Segment Base Address], --baseAddr [Segment Base Address]
                         Used to appoint the Segment base address (will be
                         ignore if has EXT_SIGMENT_ADDR record)
-
-  -s [Generated Size], --size [Generated Size]
+  -s [The Generated Size of a Sigment], --sigmentTargetSize [The Generated Size of a Sigment]
                         Padded the output file, if this size larger than
-                        actual data size(only support single segment)
-
+                        actual data size(only support single segment, Hex)
   -p [Padded Value], --pad [Padded Value]
-                        Padded value if the size argument is larger than
+                        Padded value(hex) if the size argument is larger than
                         actual data size(will be ignore if size arg is not
                         appointed)
-
-  --align [Text Align]  The text file will added \r every this number
-
+  - [Gap to a New Segment], --gapSimSeg [Gap to a New Segment]
+                        If Gap length is larger than dedicated(Dec), then
+                        simulate a new segment
+  --align [Text Align]  The text file will added \r every this number(Dec)
   --wcrc                Indicate whether write CRC(24) to binary file, only
                         work when <size> large than <actual size> + 3
