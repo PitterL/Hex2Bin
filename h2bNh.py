@@ -1,3 +1,27 @@
+'''
+MIT License
+
+Copyright (c) [2022] [Microchip]
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+'''
+
 import os
 import sys
 import argparse
@@ -6,10 +30,13 @@ import textwrap
 from enum import Enum
 
 '''
+     Introducing a handy tool convert hex file to binary file or C arrays. Which can convert hex to segment binary/array or a single one. 
+        We all know the fuse/config bits are in a much higher address, usually make general tools generate a huge file. Now this tool helps.
+        
     Version:
         <1.2.1>: Intitilized, support avr hex
         <1.2.2>: support pic type hex: <a> Extended Linear Address Record <b> uncontinous data record
-        <1.2.3>: support uncontinous data record simulated a new Segment
+        <1.2.3>: support uncontinous data record simulated a new Segment for PIC
 '''
 
 def parse_args(args=None):
@@ -57,14 +84,14 @@ def parse_args(args=None):
     parser.add_argument('-', '--gapSimSeg', required=False,
                         nargs='?',
                         default='0',
-                        metavar='Gap to a New Segment',
-                        help='If Gap length is larger than dedicated(Dec), then simulate a new segment')
+                        metavar='Gap to simulate a New Segment',
+                        help='Determine how much gap between two address will be split into different segments (Dec)')
 
     parser.add_argument('--align', required=False,
                         nargs='?',
                         default='16',
                         metavar='Text Align',
-                        help='The text file will added \\r every this number(Dec)')
+                        help='Determine output the C Array line width, that will added \`\\r\` every this count (Dec)')
 
     parser.add_argument('--wcrc', required=False,
                         default=False,
