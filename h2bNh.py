@@ -37,6 +37,7 @@ from enum import Enum
         <1.2.1>: Intitilized, support avr hex
         <1.2.2>: support pic type hex: <a> Extended Linear Address Record <b> uncontinous data record
         <1.2.3>: support uncontinous data record simulated a new Segment for PIC
+        <1.2.4>: Fix the linear address incorrect issue (should shift 16bit);export tagname for detect linear address and segment address; default new segment gap set to 64 bytes
 '''
 
 def parse_args(args=None):
@@ -53,7 +54,7 @@ def parse_args(args=None):
         '''))
 
     parser.add_argument('-v', '--version',
-                        action='version', version='%(prog)s [1.2.3]',
+                        action='version', version='%(prog)s [1.2.4]',
                         help='show version')
                         
 
@@ -81,9 +82,9 @@ def parse_args(args=None):
                         metavar='Padded Value',
                         help='Padded value(hex) if the size argument is larger than actual data size(will be ignore if size arg is not appointed)')
 
-    parser.add_argument('-', '--gapSimSeg', required=False,
+    parser.add_argument('-', '--gap', required=False,
                         nargs='?',
-                        default='0',
+                        default='64',
                         metavar='Gap to simulate a New Segment',
                         help='Determine how much gap between two address will be split into different segments (Dec)')
 
@@ -187,15 +188,15 @@ class H2B:
         return crc
 
 
-    def _bin_segment_save_and_create(self, filename, base, offset):
+    def _bin_segment_save_and_create(self, filename, tagname, base, offset):
         if self.fpBinOut:
             self.fpBinOut.close()
         
-        newfile = "{filename}_Sig_0x{base:04X}_({off:04X}h).bin".format(filename = filename, base = base, off = offset)
+        newfile = "{filename}_{tagname}_0x{base:04X}_(@{off:04X}h).bin".format(filename = filename, tagname = tagname, base = base, off = offset)
         self.fpBinOut = open(newfile, 'wb')
 
 
-    def _text_segment_save_and_create(self, filename, base, offset):
+    def _text_segment_save_and_create(self, filename, tagname, base, offset):
         if self.fpTextOut:
             endseg = "}};\t/* {} bytes CRC(24) = 0x{:06X}*/\n".format(self.segSize, self.crc)
             self.fpTextOut.write(endseg)
@@ -204,23 +205,25 @@ class H2B:
             self.fpTextOut = open(newfile, 'wt')
         
         if self.fpTextOut:
-            newseg = "Sig_0x{base:04X}_({off:04X}h)[] = {{\n".format(base = base, off = offset)
+            newseg = "{tagname}_0x{base:04X}_(@{off:04X}h)[] = {{\n".format(tagname = tagname, base = base, off = offset)
             self.fpTextOut.write(newseg)
 
 
     def segment_save_and_create(self, offset = 0):
-        self._text_segment_save_and_create(self.fileName, self.baseAddr, offset)
-        self._bin_segment_save_and_create(self.fileName, self.baseAddr, offset)
+        self._text_segment_save_and_create(self.fileName, self.tagname, self.baseAddr, offset)
+        self._bin_segment_save_and_create(self.fileName, self.tagname, self.baseAddr, offset)
         
         self.crc = 0
         self.segSize = 0
         self.segCount += 1
         self.dataOffset = 0
         self.newSeg = False
+        self.tagname = self.tagname
 
-    def segment_init(self, baseaddr):
+    def segment_init(self, baseaddr, tagname):
         self.newSeg = True
         self.baseAddr = baseaddr
+        self.tagname = tagname
 
 
     def bin_feed(self, data):
@@ -358,7 +361,7 @@ class H2B:
         if align > 0:
             self.alignText = align
         # gap to simulated a new segment
-        self.gapSimSeg = int(args.gapSimSeg, 10)
+        self.gapSimSeg = int(args.gap, 10)
 
         try :
             # Open hex file
@@ -376,18 +379,18 @@ class H2B:
                     base = self.peak_data(hexstr, 0, 4)
                     addr = base << 4
                     # assert a new segment
-                    self.segment_init(addr)
+                    self.segment_init(addr, 'Seg')
                 if rectyp == ReocrdType.EXT_LINEAR_ADDR.value:
                     #Linear record
                     base = self.peak_data(hexstr, 0, 4)
-                    addr = base << 8
+                    addr = base << 16
                     # assert a new segment
-                    self.segment_init(addr)
+                    self.segment_init(addr, 'Line')
                 elif rectyp == ReocrdType.DATA_RECORD.value:
                     #data record
                     if not self.segCount:
                         addr = int(args.baseAddr, 16)
-                        self.segment_init(addr) # for none segment type hex
+                        self.segment_init(addr, 'Data') # for none segment type hex
                     self.segment_feed(hexstr)
                 elif rectyp == ReocrdType.END_OF_FILE.value:
                     #end record
